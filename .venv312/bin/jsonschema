@@ -1,6 +1,0 @@
-#!/Users/jiin/Documents/Files/02_EVnSolution/00_Source_code/CLEVER/clever-msa-platform/development/service-support-registry/.venv312/bin/python3.12
-import sys
-from jsonschema.cli import main
-if __name__ == '__main__':
-    sys.argv[0] = sys.argv[0].removesuffix('.exe')
-    sys.exit(main())
