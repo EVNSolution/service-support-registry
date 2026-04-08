@@ -20,7 +20,7 @@ class SupportTicketApiTests(TestCase):
         self.user_token = self._issue_token("user", self.user_account_id)
         self.other_user_token = self._issue_token("user", self.other_account_id)
 
-    def _issue_token(self, role: str, account_id: str) -> str:
+    def _issue_token(self, role: str, account_id: str, *, allowed_nav_keys: list[str] | None = None) -> str:
         now = datetime.now(timezone.utc)
         payload = {
             "sub": account_id,
@@ -33,6 +33,8 @@ class SupportTicketApiTests(TestCase):
             "jti": str(uuid4()),
             "type": "access",
         }
+        if allowed_nav_keys is not None:
+            payload["allowed_nav_keys"] = allowed_nav_keys
         return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
     def _authenticate(self, token: str) -> None:
@@ -85,6 +87,15 @@ class SupportTicketApiTests(TestCase):
         self.assertIn("route_no", create_response.data)
         self.assertEqual(len(list_response.data), 1)
         self.assertEqual(list_response.data[0]["requester_account_id"], self.user_account_id)
+
+    def test_admin_without_support_nav_key_is_denied(self) -> None:
+        self._create_ticket(requester_account_id=self.user_account_id)
+        self._authenticate(self._issue_token("admin", self.admin_account_id, allowed_nav_keys=[]))
+
+        response = self.client.get("/tickets/")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["message"], "This API is not allowed by current navigation policy.")
 
     def test_user_cannot_patch_ticket(self) -> None:
         ticket = self._create_ticket(requester_account_id=self.user_account_id)

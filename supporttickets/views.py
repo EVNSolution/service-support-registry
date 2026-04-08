@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from supporttickets.models import SupportTicket, SupportTicketResponse
+from supporttickets.permissions_navigation import require_nav_access
 from supporttickets.permissions import AuthenticatedTicketAccess, is_admin
 from supporttickets.serializers import (
     HealthSerializer,
@@ -42,6 +43,8 @@ class TicketListCreateView(generics.ListCreateAPIView):
     permission_classes = [AuthenticatedTicketAccess]
 
     def get_queryset(self):
+        if self.request.method.lower() == "get":
+            require_nav_access(self.request, "support")
         queryset = SupportTicket.objects.all()
         user = self.request.user
 
@@ -88,6 +91,8 @@ class TicketDetailView(
         return ticket
 
     def get_queryset(self):
+        if self.request.method.lower() == "get":
+            require_nav_access(self.request, "support")
         queryset = SupportTicket.objects.all()
         if is_admin(self.request.user):
             return queryset
@@ -107,6 +112,8 @@ class TicketResponseListCreateView(generics.ListCreateAPIView):
     permission_classes = [AuthenticatedTicketAccess]
 
     def get_queryset(self):
+        if self.request.method.lower() == "get":
+            require_nav_access(self.request, "support")
         queryset = SupportTicketResponse.objects.select_related("ticket").all()
         user = self.request.user
 
